@@ -48,7 +48,7 @@ start(Key, Secret, Host, Port) ->
 
 init([Owner, Key, Secret, Host, Port, Parent]) ->
   monitor(process, Owner),
-  {ok, Connection} = gun:open(Host, Port),
+  {ok, Connection} = gun:open(Host, Port, gun_options(Port)),
   {ok, #state{
     owner = Owner,
     key = Key,
@@ -58,6 +58,11 @@ init([Owner, Key, Secret, Host, Port, Parent]) ->
     connection = Connection,
     state = connecting,
     parent = Parent}}.
+
+gun_options(443) ->
+  #{protocols => [http], retry => 1, transport => tls, tls_opts => [{verify, verify_none}]};
+gun_options(_) ->
+  #{}.
 
 handle_call({request, Action, Data, Pid}, _From, #state{ id = Id, key = Key, secret = Secret, pids_map = PidsMap, connection = Connection, notifications_pid = NotificationsPid } = State) ->
   NewNotificationsPid = case Action of
